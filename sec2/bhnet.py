@@ -35,28 +35,88 @@ def usage():
 	print "echo 'ABCDEFGHI' | ./hnet.py -t 192.168.11.12 -p 135"
 	sys.exit(0)
 
+def main():
+
+	print "this is main"
+	global listen
+	global port
+	global execute
+	global command
+	global upload_destination
+	global target
+
+	if not len(sys.argv[1:]):
+		usage()
+	#read command options
+	try:
+		opts, args = getopt.getopt(
+			sys.argv[1:],
+			"hle:t:p:cu:",
+			["help", "listen", "execute=", "target=",
+			"port=","command", "upload="])
+	except getopt.GetoptError as err:
+		print str(err)
+		usage()
+
+	for o,a in opts:
+		if o in ("-h", "--help"):
+			usage()
+		elif o in ("-l", "--listen"):
+			listen = True
+		elif o in ("-e", "--execute"):
+			execute = a
+		elif o in ("-c", "--commandshell"):
+			command = True
+		elif o in ("-u", "--upload"):
+			upload_destination = a
+		elif o in ("-t", "--target"):
+			target = a
+		elif o in ("-p", "--port"):
+			port = int(a)
+		else:
+			assert False, "Unhandled Option"
+	
+	if not listen and len(target) and port > 0:
+		print "put input into buffer. if you dont send data to standard input push ctrl+D"	
+		#put input into buffer
+		#if you dont send data to standard input,push ctrl + D
+		buffer = sys.stdin.read()
+		print "send buffer to client sender"
+		print buffer
+		print "===="
+		#send data
+		client_sender(buffer)
+
+	#start listening
+	if listen:
+		server_loop()
+
 
 def client_sender(buffer):
 	
+	print "this is client sender"	
 	client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+	print "socket done l99"
 	try:
 		#connect to target host	
 		client.connect((target, port))
-
+		print "connect l103"
 		if len(buffer):
 			client.send(buffer)
+			print"send buffer l106"
 
 		while True:
 			#receiving
 			recv_len = 1
 			response = ""
-			
+			print "recv l112"
 			while recv_len:
 				data = client.recv(4096)
 				recv_len = len(data)
+				print recv_len
 				response+= data
-			
+				print response
+			print "i wanna print response"	
 			print response,
 		
 			#receiving additional data
@@ -73,6 +133,7 @@ def client_sender(buffer):
 		client.close()
 
 def server_loop():
+	print "this is server_loop"
 	global target
 	
 	# if ip address is not specified
@@ -88,7 +149,6 @@ def server_loop():
 
 	while True:
 		client_socket, addr = server.accept()
-
 		#start thread which handle a new connection
 		client_thread = threading.Thread(
 			target = client_handler, args=(client_socket,))
@@ -97,6 +157,7 @@ def server_loop():
 
 
 def run_command(command):
+	print "this is run command"
 	#delete a new line in a tail of string
 	command = command.rstrip()
 
@@ -111,10 +172,12 @@ def run_command(command):
 	return output
 
 def client_handler(client_socket):
+	print "this is client handler"
 	global upload
 	global execute
 	global command
 	
+	print "this is client handler"
 	#check upload destination
 	if len(upload_destination):
 		
@@ -153,18 +216,23 @@ def client_handler(client_socket):
 	
 	# if commandshell execution is specified
 	if command:
-	
+		
 		#show prompt
 		prompt = "<BHP:#> "
 		client_socket.send(prompt)
-
+		print "socket sending done"
 		while True:
 		
 			#till enter key is pushed
 			cmd_buffer = ""
+			hoge = 0
 			while "\n" not in cmd_buffer:
 				cmd_buffer += client_socket.recv(1024)
+				print cmd_buffer
+				print hoge
+				hoge += 1
 
+			print"not while"
 			# get result of command execution
 			response = run_command(cmd_buffer)
 			response += prompt
@@ -172,59 +240,4 @@ def client_handler(client_socket):
 			# send command execution
 			client_socket.send(response)
 
-def main():
-	global listen
-	global port
-	global execute
-	global command
-	global upload_destination
-	global target
-
-	if not len(sys.argv[1:]):
-		usage()
-
-	#read command options
-	try:
-		opts, args = getopt.getopt(
-			sys.argv[1:],
-			"hle:t:p:cu:",
-			["help", "listen", "execute=", "target=",
-			"port=","command", "upload="])
-	except getopt.GetoptError as err:
-		print str(err)
-		usage()
-
-	for o,a in opts:
-		if o in ("-h", "--help"):
-			usage()
-		elif o in ("-l", "--listen"):
-			listen = True
-		elif o in ("-e", "--execute"):
-			execute = a
-		elif o in ("-c", "--commandshell"):
-			command = True
-		elif o in ("-u", "--upload"):
-			upload_destination = a
-		elif o in ("-t", "--target"):
-			target = a
-		elif o in ("-p", "--port"):
-			port = int(a)
-		else:
-			assert False, "Unhandled Option"
-	
-	if not listen and len(target) and port > 0:
-		
-		#put input into buffer
-		#if you dont send data to standard input,push ctrl + D
-		buffer = sys.stdin.read()
-		
-		#send data
-		client_sender(buffer)
-
-	#start listening
-	if listen:
-		server_loop()
-
 main()
-
-
