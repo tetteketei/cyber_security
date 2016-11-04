@@ -2,25 +2,28 @@
 
 def get_ST10(sn):
 	tmp = int('0x'+sn,16)
-	print "(10)" + str(tmp) 
-	print "(16)" + hex(tmp*(16**8))
+	print "s(10) : " + str(tmp) 
+	print "ST(16): " + hex(tmp*(16**8))
 	return tmp*(16**8) 
 
-def get_FR16(sn):
+def get_a10(sn):
 	st = get_ST10(sn)
-	M = st
-	a = 2**80 - M
-	print "this is a "
-	print a
+	a = 2**80 - st
+	fr = a % 3 
+	M = st + fr
+	a = a - fr
+	print "FR(16): "+ hex(fr)
+	print "M(16): " + hex(M)
+	print "a(16): " + hex(a)
 	#print int('0xffffe93cfe8900000000',16)
 	#return a % 3
 	return a 
 
 def main(sn):
-	a = get_FR16('16c30177')
-	s = 2**395 - (a/3)*(2**42) 
-	print hex(s) 
-	print hex(s^3)	
+	a = get_a10('16c30177')
+	sig = 2**395 - (a/3)*(2**42)
+	print "sig(16): " + hex(sig) 
+	print "sig**3(16): " + hex(sig**3) 
 
 
 '''	fr = b
